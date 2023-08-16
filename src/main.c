@@ -1,11 +1,9 @@
-#ifndef SOKOL_IMPLD
-#define SOKOL_IMPL
-#endif
 #include <sokol_app.h>
 #include <sokol_gfx.h>
 #include <sokol_log.h>
 #include <sokol_glue.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "shadertoy.glsl.h"
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -107,16 +105,18 @@ static void cleanup(void* ptr) {
 static void event(const sapp_event* e, void* ptr) {
     App* state = (App*)ptr;
     int index = 0;
+    int x = 0;
+    int y = 0;
     switch (e->type) {
         case SAPP_EVENTTYPE_KEY_DOWN:
             if (e->key_code == SAPP_KEYCODE_ESCAPE) {
                 sapp_request_quit();
             }
             break;
-        
+
         case SAPP_EVENTTYPE_MOUSE_MOVE:
-            int x = e->mouse_x;
-            int y = e->mouse_y;
+            x = e->mouse_x;
+            y = e->mouse_y;
             y = sapp_height() - y;
             state->frag.iMouse[0] = x;
             state->frag.iMouse[1] = y;
