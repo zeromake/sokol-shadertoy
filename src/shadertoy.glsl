@@ -32,7 +32,7 @@ layout(binding=7) uniform sampler smp2;
 layout(binding=8) uniform texture2D iChannel3;
 layout(binding=9) uniform sampler smp3;
 
-@include distfunctions2d.glsl.in
+@include remote.glsl.in
 
 layout(location = 0) out vec4 outColor;
 
