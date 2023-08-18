@@ -69,10 +69,11 @@ static void init(void* ptr) {
             }
         },
     });
+    float color = 0xe5 / 255.0f;
     state->pass_action = (sg_pass_action) {
         .colors[0] = {
             .load_action=SG_LOADACTION_CLEAR,
-            .clear_value={1.0f, 1.0f, 1.0f, 1.0f},
+            .clear_value={color, color, color, 1.0f},
         }
     };
 }
