@@ -2,6 +2,7 @@ param(
     $id = "cs2yzG",
     $file = "src/remote.glsl.in"
 )
+# pwsh ./fetch.ps1 7tyyDy && xmake b -r shader && xmake b shadertoy && xmake r shadertoy
 
 $resp = Invoke-WebRequest -UseBasicParsing -Uri "https://www.shadertoy.com/shadertoy" `
 -Method POST `
