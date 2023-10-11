@@ -7,6 +7,8 @@ elseif is_plat("mingw") then
     add_ldflags("-static")
 end
 
+add_repositories("zeromake https://github.com/zeromake/xrepo.git")
+
 rule("sokol_shader")
     set_extensions(".glsl")
     on_buildcmd_file(function (target, batchcmds, sourcefile, opt)
@@ -56,5 +58,14 @@ target("shadertoy")
             "QuartzCore"
         )
 	else
+        -- if is_plat("macosx") then
+        --     add_frameworks(
+        --         "OpenGL",
+        --         "Appkit",
+        --         "CoreGraphics",
+        --         "QuartzCore"
+        --     )
+        --     add_files("src/*.m")
+        -- end
 		add_defines("SOKOL_GLCORE33")
 	end
