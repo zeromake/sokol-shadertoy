@@ -44,7 +44,7 @@ static void init(void* ptr) {
     state->frag.iSampleRate = 44100.0f;
     state->frag.iSampleRate = 60.0f;
     sg_setup(&(sg_desc){
-        .context = sapp_sgcontext(),
+        .environment = sglue_environment(),
         .logger.func = slog_func,
     });
     sg_shader shd = sg_make_shader(simple_shader_desc(sg_query_backend()));
@@ -89,7 +89,7 @@ static void frame(void* ptr) {
     state->frag.iTime = (float)t / 1000.0f;
     state->frag.iTimeDelta = (float)tt / 1000.0f;
     state->frag.iFrame = state->iframe;
-    sg_begin_default_pass(&state->pass_action, sapp_width(), sapp_height());
+    sg_begin_pass(&(sg_pass){ .action = state->pass_action, .swapchain = sglue_swapchain() });
     sg_apply_pipeline(state->pip);
     sg_apply_bindings(&state->bind);
     sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_frag, &SG_RANGE(state->frag));

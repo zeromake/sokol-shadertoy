@@ -1,6 +1,5 @@
 add_rules("mode.debug", "mode.release")
 
-add_requires("stb", "sokol", "handmade_math")
 if is_plat("windows") then
     add_cxflags("/utf-8")
 elseif is_plat("mingw") then
@@ -8,30 +7,12 @@ elseif is_plat("mingw") then
 end
 
 add_repositories("zeromake https://github.com/zeromake/xrepo.git")
+add_requires("stb", "sokol", "handmade_math", "sokol-shdc")
 
-rule("sokol_shader")
-    set_extensions(".glsl")
-    on_buildcmd_file(function (target, batchcmds, sourcefile, opt)
-        local targetfile = path.relative(sourcefile, "src")
-        batchcmds:mkdir("$(buildir)/sokol_shader")
-        local targetfile = vformat(path.join("$(buildir)/sokol_shader", targetfile..".h"))
-        batchcmds:vrunv("sokol-shdc", {
-            "--ifdef",
-            "-l",
-            "hlsl5:glsl330:glsl300es:metal_macos:metal_ios",
-            "--input",
-            sourcefile,
-            "--output",
-            targetfile,
-        })
-        batchcmds:show_progress(opt.progress, "${color.build.object}glsl %s", sourcefile)
-        batchcmds:add_depfiles(sourcefile)
-    end)
-rule_end()
-
-add_rules("sokol_shader")
 target("shader")
     set_kind("object")
+    add_packages("sokol-shdc")
+    add_rules("@sokol-shdc/shader")
     add_files("src/*.glsl")
 
 target("shadertoy")
