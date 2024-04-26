@@ -4,6 +4,7 @@
 #include <sokol_glue.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "shadertoy.glsl.h"
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -40,6 +41,7 @@ typedef struct App {
 
 static void init(void* ptr) {
     App* state = (App*)ptr;
+    memset(&state->frag, 0, sizeof(frag_t));
     state->timestamp = getCurrentMilliSecTimestamp();
     state->frag.iSampleRate = 44100.0f;
     state->frag.iSampleRate = 60.0f;
@@ -119,16 +121,21 @@ static void event(const sapp_event* e, void* ptr) {
             x = e->mouse_x;
             y = e->mouse_y;
             y = sapp_height() - y;
+            // 苹果系统需要缩放鼠标坐标
+#ifdef __APPLE__
+            x = (float)x / sapp_dpi_scale();
+            y = (float)y / sapp_dpi_scale();
+#endif
             state->frag.iMouse[0] = x;
             state->frag.iMouse[1] = y;
             break;
         case SAPP_EVENTTYPE_MOUSE_DOWN:
-            index = e->mouse_button - SAPP_MOUSEBUTTON_LEFT + 2;
-            index <= 3 && (state->frag.iMouse[index] = 1);
+            state->frag.iMouse[2] = e->mouse_button - SAPP_MOUSEBUTTON_LEFT + 1;
+            state->frag.iMouse[3] = 1.0;
             break;
         case SAPP_EVENTTYPE_MOUSE_UP:
-            index = e->mouse_button - SAPP_MOUSEBUTTON_LEFT + 2;
-            index <= 3 && (state->frag.iMouse[index] = 0);
+            state->frag.iMouse[2] = 0.0;
+            state->frag.iMouse[3] = 0.0;
             break;
     }
 }
