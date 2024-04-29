@@ -50,15 +50,18 @@ static void init(void* ptr) {
         .logger.func = slog_func,
     });
     sg_shader shd = sg_make_shader(simple_shader_desc(sg_query_backend()));
+    // 必须是三角型，否则无法显示
     float vertices[] = {
+        // LB, LT, RT 组成的左上三角形
        -1, -1,  // left bottom
         -1, 1,  // left top
         1, 1,   // right top
+        // LB, RT, RB 组成的右下三角形
         -1, -1, // left bottom
         1, 1,   // right top
         1, -1,  // right bottom
     };
-    state->elements = sizeof(vertices) / sizeof(float[2]);
+    state->elements = sizeof(vertices) / (sizeof(float) * 2);
     state->bind.vertex_buffers[0] = sg_make_buffer(&(sg_buffer_desc){
         .size = sizeof(vertices),
         .data = SG_RANGE(vertices),
@@ -110,33 +113,27 @@ static void event(const sapp_event* e, void* ptr) {
     int index = 0;
     int x = 0;
     int y = 0;
-    switch (e->type) {
-        case SAPP_EVENTTYPE_KEY_DOWN:
-            if (e->key_code == SAPP_KEYCODE_ESCAPE) {
-                sapp_request_quit();
-            }
-            break;
-
-        case SAPP_EVENTTYPE_MOUSE_MOVE:
-            x = e->mouse_x;
-            y = e->mouse_y;
-            y = sapp_height() - y;
-            // 苹果系统需要缩放鼠标坐标
+    if (e->type == SAPP_EVENTTYPE_KEY_DOWN) {
+        if (e->key_code == SAPP_KEYCODE_ESCAPE) {
+            sapp_request_quit();
+        }
+    } else if (e->type == SAPP_EVENTTYPE_MOUSE_MOVE) {
+        x = e->mouse_x;
+        y = e->mouse_y;
+        y = sapp_height() - y;
+        // 苹果系统需要缩放鼠标坐标
 #ifdef __APPLE__
-            x = (float)x / sapp_dpi_scale();
-            y = (float)y / sapp_dpi_scale();
+        x = (float)x / sapp_dpi_scale();
+        y = (float)y / sapp_dpi_scale();
 #endif
-            state->frag.iMouse[0] = x;
-            state->frag.iMouse[1] = y;
-            break;
-        case SAPP_EVENTTYPE_MOUSE_DOWN:
-            state->frag.iMouse[2] = e->mouse_button - SAPP_MOUSEBUTTON_LEFT + 1;
-            state->frag.iMouse[3] = 1.0;
-            break;
-        case SAPP_EVENTTYPE_MOUSE_UP:
-            state->frag.iMouse[2] = 0.0;
-            state->frag.iMouse[3] = 0.0;
-            break;
+        state->frag.iMouse[0] = x;
+        state->frag.iMouse[1] = y;
+    } else if (e->type == SAPP_EVENTTYPE_MOUSE_DOWN) {
+        state->frag.iMouse[2] = e->mouse_button - SAPP_MOUSEBUTTON_LEFT + 1;
+        state->frag.iMouse[3] = 1.0;
+    } else if (e->type == SAPP_EVENTTYPE_MOUSE_UP) {
+        state->frag.iMouse[2] = 0.0;
+        state->frag.iMouse[3] = 0.0;
     }
 }
 
