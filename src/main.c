@@ -51,29 +51,47 @@ static void init(void* ptr) {
     });
     sg_shader shd = sg_make_shader(simple_shader_desc(sg_query_backend()));
     // 必须是三角型，否则无法显示
+    // 顶点坐标
     float vertices[] = {
-        // LB, LT, RT 组成的左上三角形
-       -1, -1,  // left bottom
-        -1, 1,  // left top
-        1, 1,   // right top
-        // LB, RT, RB 组成的右下三角形
-        -1, -1, // left bottom
-        1, 1,   // right top
-        1, -1,  // right bottom
+        1, 1,   // RT
+        1, -1,  // RB
+        -1, -1, // LB
+        -1, 1,  // LT
     };
-    state->elements = sizeof(vertices) / (sizeof(float) * 2);
+    // 顶点索引
+    uint16_t indices[] = {
+        0, 1, 3, // RT -> RB -> LT
+        1, 2, 3, // RB -> LB -> LT
+    };
+    // 需要绘制的顶点次数
+    state->elements = sizeof(indices) / sizeof(uint16_t);
+    // 绑定顶点数据
     state->bind.vertex_buffers[0] = sg_make_buffer(&(sg_buffer_desc){
         .size = sizeof(vertices),
         .data = SG_RANGE(vertices),
+        .label = "vertices",
     });
+    // 绑定索引数据
+    state->bind.index_buffer = sg_make_buffer(&(sg_buffer_desc){
+        .type = SG_BUFFERTYPE_INDEXBUFFER,
+        .size = sizeof(indices),
+        .data = SG_RANGE(indices),
+        .label = "indices",
+    });
+    // 创建管线
     state->pip = sg_make_pipeline(&(sg_pipeline_desc){
         .shader = shd,
+        // 定义索引类型
+        .index_type = SG_INDEXTYPE_UINT16,
         .layout = {
             .attrs = {
+                // 设置顶点坐标输入类型
                 [ATTR_vs_position].format = SG_VERTEXFORMAT_FLOAT2
             }
         },
+        .label = "pipeline",
     });
+    // 设置清屏颜色
     float color = 0xe5 / 255.0f;
     state->pass_action = (sg_pass_action) {
         .colors[0] = {
@@ -85,21 +103,34 @@ static void init(void* ptr) {
 
 static void frame(void* ptr) {
     App* state = (App*)ptr;
+
+    // 更新 uniform 变量
     uint64_t now = getCurrentMilliSecTimestamp();
     uint64_t t = now - state->timestamp;
     uint64_t tt = now - state->prev_timestamp;
     state->prev_timestamp = now;
+    // 更新画布大小
     state->frag.iResolution[0] = sapp_width();
     state->frag.iResolution[1] = sapp_height();
+    // 更新时间
     state->frag.iTime = (float)t / 1000.0f;
     state->frag.iTimeDelta = (float)tt / 1000.0f;
+    // 更新绘制次数
     state->frag.iFrame = state->iframe;
+
+    // 绑定绘制目标，并自动清屏
     sg_begin_pass(&(sg_pass){ .action = state->pass_action, .swapchain = sglue_swapchain() });
+    // 绑定管线
     sg_apply_pipeline(state->pip);
+    // 设置顶点数据到管线
     sg_apply_bindings(&state->bind);
+    // 设置 fs 的 uniform 变量到管线
     sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_frag, &SG_RANGE(state->frag));
+    // 根据顶点数量进行绘制
     sg_draw(0, state->elements, 1);
+    // 解除管线绑定
     sg_end_pass();
+    // 提交绘制到目标
     sg_commit();
     state->iframe += 1;
 }
