@@ -30,5 +30,5 @@ $ xmake b -r shader && xmake b shadertoy && xmake r shadertoy
 - [x] sokol-shdc 通过 xrepo 自动下载
 - [x] sokol 更新到新版的 sg_begin_pass
 - [ ] 支持 gpu 的 pporf ui 适配
-- [ ] 支持 imgui 的调试 ui 接入
+- [x] 支持 imgui 的调试 ui 接入 (sokol dbgui)
 - [ ] 支持 shadertoy 的纹理资源导入

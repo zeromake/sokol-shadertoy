@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include "dbgui.h"
 #include "shadertoy.glsl.h"
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -49,6 +51,7 @@ static void init(void* ptr) {
         .environment = sglue_environment(),
         .logger.func = slog_func,
     });
+    __dbgui_setup(1);
     sg_shader shd = sg_make_shader(simple_shader_desc(sg_query_backend()));
     // 必须是三角型，否则无法显示
     // 顶点坐标
@@ -129,6 +132,7 @@ static void frame(void* ptr) {
     // 根据顶点数量进行绘制
     sg_draw(0, state->elements, 1);
     // 解除管线绑定
+    __dbgui_draw();
     sg_end_pass();
     // 提交绘制到目标
     sg_commit();
@@ -136,10 +140,12 @@ static void frame(void* ptr) {
 }
 
 static void cleanup(void* ptr) {
+    __dbgui_shutdown();
     sg_shutdown();
 }
 
 static void event(const sapp_event* e, void* ptr) {
+    __dbgui_event(e);
     App* state = (App*)ptr;
     int index = 0;
     int x = 0;
