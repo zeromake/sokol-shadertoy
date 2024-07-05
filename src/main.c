@@ -145,7 +145,10 @@ static void cleanup(void* ptr) {
 }
 
 static void event(const sapp_event* e, void* ptr) {
-    __dbgui_event(e);
+    // dbgui 接管事件
+    if (__dbgui_event_with_retval(e)) return;
+
+    // dbgui 不使用的事件才传递到这里
     App* state = (App*)ptr;
     int index = 0;
     int x = 0;
