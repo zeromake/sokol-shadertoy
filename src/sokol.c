@@ -8,3 +8,5 @@
 #include <sokol_time.h>
 #include <sokol_fetch.h>
 #include <sokol_log.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb/stb_image.h>

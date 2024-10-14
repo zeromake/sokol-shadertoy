@@ -2,10 +2,14 @@
 #include <sokol_gfx.h>
 #include <sokol_log.h>
 #include <sokol_glue.h>
+#include <sokol_fetch.h>
+#include <stb/stb_image.h>
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "dbgui.h"
 #include "shadertoy.glsl.h"
 
@@ -38,8 +42,10 @@ typedef struct App {
     int iframe;
     int elements;
     frag_t frag;
+    uint8_t file_buffer[1024 * 1024 * 2];
 } App;
 
+static void fetch_callback(const sfetch_response_t*);
 
 static void init(void* ptr) {
     App* state = (App*)ptr;
@@ -51,7 +57,18 @@ static void init(void* ptr) {
         .environment = sglue_environment(),
         .logger.func = slog_func,
     });
+    // 初始化 sfetch_setup
+    sfetch_setup(&(sfetch_desc_t){
+        .max_requests = 2,
+        .num_channels = 1,
+        .num_lanes = 1,
+        .logger.func = slog_func,
+    });
+
     __dbgui_setup(1);
+    // y 轴翻转
+    // stbi_set_flip_vertically_on_load(true);
+
     sg_shader shd = sg_make_shader(simple_shader_desc(sg_query_backend()));
     // 必须是三角型，否则无法显示
     // 顶点坐标
@@ -102,9 +119,62 @@ static void init(void* ptr) {
             .clear_value={color, color, color, 1.0f},
         }
     };
+
+    // 初始化纹理
+    state->bind.fs.images[SLOT__iChannel0] = sg_alloc_image();
+    state->bind.fs.samplers[SLOT__smp0] = sg_alloc_sampler();
+    sg_init_sampler(state->bind.fs.samplers[SLOT__smp0], &(sg_sampler_desc){
+        .wrap_u = SG_WRAP_REPEAT,
+        .wrap_v = SG_WRAP_REPEAT,
+        .min_filter = SG_FILTER_LINEAR,
+        .mag_filter = SG_FILTER_LINEAR,
+        .compare = SG_COMPAREFUNC_NEVER,
+        .label = "smp0",
+    });
+    sfetch_send(&(sfetch_request_t){
+        .path = "src/resource/channel0.png",
+        .callback = fetch_callback,
+        .buffer = SFETCH_RANGE(state->file_buffer),
+        .user_data = SFETCH_RANGE(state),
+    });
+}
+
+static void fetch_callback(const sfetch_response_t* response) {
+    App *state = *(App**)response->user_data;
+    if (response->fetched) {
+        int img_width, img_height, num_channels;
+        const int desired_channels = 4;
+        // 使用 stb
+        stbi_uc* pixels = stbi_load_from_memory(
+            response->data.ptr,
+            (int)response->data.size,
+            &img_width, &img_height,
+            &num_channels, desired_channels);
+        if (pixels) {
+            /* initialize the sokol-gfx texture */
+            sg_init_image(state->bind.fs.images[SLOT__iChannel0], &(sg_image_desc){
+                .width = img_width,
+                .height = img_height,
+                /* set pixel_format to RGBA8 for WebGL */
+                .pixel_format = SG_PIXELFORMAT_RGBA8,
+                .data.subimage[0][0] = {
+                    .ptr = pixels,
+                    .size = img_width * img_height * 4,
+                },
+                .label = "iChannel0",
+            });
+            stbi_image_free(pixels);
+        }
+    } else if (response->failed) {
+        // if loading the file failed, set clear color to red
+        state->pass_action = (sg_pass_action) {
+            .colors[0] = { .load_action = SG_LOADACTION_CLEAR, .clear_value = { 1.0f, 0.0f, 0.0f, 1.0f } }
+        };
+    }
 }
 
 static void frame(void* ptr) {
+    sfetch_dowork();
     App* state = (App*)ptr;
 
     // 更新 uniform 变量
@@ -142,6 +212,7 @@ static void frame(void* ptr) {
 static void cleanup(void* ptr) {
     __dbgui_shutdown();
     sg_shutdown();
+    sfetch_shutdown();
 }
 
 static void event(const sapp_event* e, void* ptr) {
@@ -187,7 +258,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .event_userdata_cb = event,
         .user_data = app,
         .width = 800,
-        .height = 600,
+        .height = 450,
         .window_title = "Shadertoy Preview",
         .logger.func = slog_func,
         .high_dpi = true,
