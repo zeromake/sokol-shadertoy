@@ -66,7 +66,7 @@ static void init(void* ptr) {
     });
 
     __dbgui_setup(1);
-    // y 轴翻转
+    // stb 设置 y 轴翻转(改为在 shader 中翻转)
     // stbi_set_flip_vertically_on_load(true);
 
     sg_shader shd = sg_make_shader(simple_shader_desc(sg_query_backend()));
@@ -109,7 +109,7 @@ static void init(void* ptr) {
                 [ATTR_vs_position].format = SG_VERTEXFORMAT_FLOAT2
             }
         },
-        .label = "pipeline",
+        .label = "image-pipeline",
     });
     // 设置清屏颜色
     float color = 0xe5 / 255.0f;
@@ -117,7 +117,7 @@ static void init(void* ptr) {
         .colors[0] = {
             .load_action=SG_LOADACTION_CLEAR,
             .clear_value={color, color, color, 1.0f},
-        }
+        },
     };
 
     // 初始化纹理
@@ -132,7 +132,7 @@ static void init(void* ptr) {
         .label = "smp0",
     });
     sfetch_send(&(sfetch_request_t){
-        .path = "src/resource/channel0.png",
+        .path = "src/resource/renderpass0-channel0.png",
         .callback = fetch_callback,
         .buffer = SFETCH_RANGE(state->file_buffer),
         .user_data = SFETCH_RANGE(state),
@@ -157,6 +157,7 @@ static void fetch_callback(const sfetch_response_t* response) {
                 .height = img_height,
                 /* set pixel_format to RGBA8 for WebGL */
                 .pixel_format = SG_PIXELFORMAT_RGBA8,
+                .usage = SG_USAGE_IMMUTABLE,
                 .data.subimage[0][0] = {
                     .ptr = pixels,
                     .size = img_width * img_height * 4,
